@@ -107,9 +107,9 @@ Generated using greedy decoding
 ## ▶ How to Run
 
 ### 1️⃣ Install Dependencies
-
+```bash
 pip install -r requirements.txt
-
+```
 ### 2️⃣ Prepare Dataset
 
 Place your dataset inside:
@@ -117,9 +117,9 @@ Place your dataset inside:
 ./corpus/
 
 ### 3️⃣ Train the Model
-
+```bash
 python main.py
-
+```
 During training, the script will:
 - Print batch-wise progress
 - Report loss after each epoch
@@ -129,18 +129,18 @@ During training, the script will:
 
 ## 💾 Saving & Loading the Model
 
-Save model weights:
-
+### Save model weights:
+```bash
 transformer.save_weights("transformer_weights.h5")
-
-Load model weights:
-
+```
+### Load model weights:
+```bash
 transformer.load_weights("transformer_weights.h5")
-
-Once loaded, you can directly generate summaries:
-
+```
+### Once loaded, you can directly generate summaries:
+```bash
 summarize(transformer, input_text)
-
+```
 --------------------------------------------------------------------------
 
 ## 📌 Notes
