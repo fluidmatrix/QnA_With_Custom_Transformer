@@ -19,7 +19,7 @@ TensorFlow and Keras.
 --------------------------------------------------------------------------
 
 ## 📁 Project Structure
-
+```bash
 transformer_model/
 │
 ├── main.py                # Training & inference pipeline
@@ -33,7 +33,7 @@ transformer_model/
 │   └── test.json
 ├── requirements.txt       # Dependencies (pip freeze)
 └── README.md
-
+```
 --------------------------------------------------------------------------
 
 ## 🏗 Model Architecture
@@ -53,6 +53,9 @@ transformer_model/
 --------------------------------------------------------------------------
 
 ## ⚙ Training Configuration
+
+### Training Loss
+![PLT PLOT](<Screenshot 2026-01-28 113638.png>)
 
 ### Sequence Lengths
 - Encoder max length: 150
