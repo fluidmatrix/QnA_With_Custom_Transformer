@@ -1,150 +1,157 @@
-# 🧠 Transformer-Based Text Summarization (TensorFlow)
+# 🧠 Transformer-Based Question Answering with RAG (C4)
 
-An end-to-end implementation of an **abstractive text summarization model**
-using a custom **Transformer (Encoder–Decoder)** architecture built with
-TensorFlow and Keras.
+This repository demonstrates a **Transformer-based question answering system** enhanced with **Retrieval-Augmented Generation (RAG)** using chunked C4 data. 
+The system retrieves relevant context for a given question and generates answers with a custom encoder-decoder model built from scratch.
 
---------------------------------------------------------------------------
+Inspired by the paper: *"Attention is All You Need"* (Vaswani et al., 2017) and guided with insights from ChatGPT.
 
-## ✨ Features
+# ✨ Key Educational Features
 
-- Custom Transformer implementation (no high-level shortcuts)
-- Encoder–Decoder architecture with Multi-Head Attention
-- Look-ahead and padding masks
-- Teacher forcing during training
-- Greedy decoding during inference
-- SOS / EOS token-based sequence generation
-- Fully reproducible training pipeline
+- Step-by-step integration of a **Transformer** from scratch
+- Hands-on implementation of **multi-head attention** and **teacher forcing**
+- Demonstrates **RAG pipeline**: chunking → retrieval → context-conditioned generation
+- Uses **SentencePiece tokenizer** and shows tokenization for NLP tasks
+- Fully reproducible training and inference pipelines
+- Practical example for learning **TF-IDF retrieval** and **cosine similarity** for question answering
 
---------------------------------------------------------------------------
-
-## 📁 Project Structure
+# 📁 Project Structure
 ```bash
 transformer_model/
 │
-├── main.py                # Training & inference pipeline
-├── Transformer.py         # Full Transformer model
-├── Encoder.py             # Encoder stack
-├── Decoder.py             # Decoder stack
-├── DecoderLayer.py        # Masked attention decoder layer
-├── helper.py              # Masks, preprocessing, utilities
-├── corpus/                # Training & test datasets
-│   ├── train.json
-│   └── test.json
-├── requirements.txt       # Dependencies (pip freeze)
-└── README.md
+├── QuestionAnswering.py       # RAG-enabled QA inference script
+├── main.py                    # Training & inference pipeline
+├── Transformer.py             # Full Transformer model
+├── Encoder.py                 # Encoder stack
+├── Decoder.py                 # Decoder stack
+├── DecoderLayer.py            # Masked attention decoder layer
+├── helper.py                  # Masks, preprocessing, utilities
+├── rag_utils.py               # TF-IDF retriever, chunking functions
+├── corpus/                    # Optional datasets
+├── data/                      # C4 JSONL & SQuAD datasets
+├── models/                    # SentencePiece tokenizer, saved models
+├── pretrained_models/         # Pretrained QA models
+├── requirements.txt           # Dependencies
+└── README.md                  # This file
 ```
---------------------------------------------------------------------------
+# 🔗 RAG Component Overview
 
-## 🏗 Model Architecture
+1. **Chunking C4 Data**:
+   - Each large document is split into overlapping chunks (~300 words, 50-word overlap)
+   - Ensures better retrieval granularity
 
-### Encoder
+2. **TF-IDF Retrieval**:
+   - Each chunk is vectorized with **TfidfVectorizer**
+   - Cosine similarity is computed between the question and all chunks
+   - Top-k chunks are selected as relevant context
+
+3. **Context-Conditioned Question Answering**:
+   - The input to the transformer is formatted as:
+     ```
+     question: <your question> context: <retrieved chunks>
+     ```
+   - Transformer generates the answer based on retrieved context
+
+4. **Greedy Decoding**:
+   - Step-by-step token prediction until `<EOS>` token
+   - Teacher forcing is used during training to improve learning
+
+# 🏗 Transformer Architecture (Educational Focus)
+
+## Encoder
+- Token embedding + positional encoding
+- Multi-head self-attention
+- Feed-forward layers
+- Stacked encoder blocks
+
+## Decoder
+- Masked self-attention for autoregressive prediction
+- Encoder-decoder attention to integrate context
+- Feed-forward layers
+- Output softmax over the vocabulary
+
+# ⚙ Training Configuration (Hands-On Learning)
+
+- **Encoder max length**: 150 tokens  
+- **Decoder max length**: 50 tokens  
+- **Embedding dimension**: 128  
+- **Number of layers**: 2  
+- **Attention heads**: 2  
+- **Batch size**: 64  
+- **Epochs**: 20  
+- **Optimizer**: Adam with warmup schedule  
+- **Loss function**: Masked Sparse Categorical Crossentropy  
+
+This configuration demonstrates practical Transformer tuning for educational purposes.
+
+# 💾 Saving & Loading Models
+
+- Save weights:
+  ```python
+  transformer.save_weights("transformer_weights.h5")
+  ```
+**Transformer Decoding**: The model generates answers conditioned on both the question and retrieved context.
+
+# 🏗 Model Architecture
+
+## Encoder
 - Token embedding + positional encoding
 - Stacked encoder layers
 - Multi-head self-attention
 - Feed-forward networks
 
-### Decoder
+## Decoder
 - Masked self-attention (look-ahead mask)
-- Encoder–decoder attention (padding mask)
+- Encoder–decoder attention
 - Feed-forward network
 - Final softmax over vocabulary
 
---------------------------------------------------------------------------
+# ⚙ Training Configuration
 
-## ⚙ Training Configuration
-
-### Training Loss
-![PLT PLOT](<113638.png>)
-
-### Sequence Lengths
-- Encoder max length: 150
-- Decoder max length: 50
-
-### Hyperparameters
+- Encoder max length: 150 tokens
+- Decoder max length: 50 tokens
 - Embedding dimension: 128
 - Number of layers: 2
 - Attention heads: 2
 - Batch size: 64
 - Epochs: 20
-
-### Optimization
-- Optimizer: Adam
-- Learning rate: Custom warmup schedule
+- Optimizer: Adam with custom warmup schedule
 - Loss: Masked Sparse Categorical Crossentropy
 
---------------------------------------------------------------------------
+# 💾 Saving & Loading Models
 
-## 📉 Loss Function
-
-- Padding tokens are ignored
-- Loss is computed only on valid tokens
-- Normalized by number of non-padding tokens
-
---------------------------------------------------------------------------
-
-## 🔍 Inference & Summarization
-
-### How Inference Works
-1. Encode the input document
-2. Initialize decoder with [SOS]
-3. Predict tokens step-by-step
-4. Stop at [EOS] or max decoder length
-
-### Example
-
-Input:
-[SOS] amanda: i baked cookies... [EOS]
-
-Human Summary:
-[SOS] amanda baked cookies and will bring jerry some tomorrow. [EOS]
-
-Model Output:
-Generated using greedy decoding
-
---------------------------------------------------------------------------
-
-## ▶ How to Run
-
-### 1️⃣ Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-### 2️⃣ Prepare Dataset
-
-Place your dataset inside:
-
-./corpus/
-
-### 3️⃣ Train the Model
-```bash
-python main.py
-```
-During training, the script will:
-- Print batch-wise progress
-- Report loss after each epoch
-- Show example summarizations from the test set
-
---------------------------------------------------------------------------
-
-## 💾 Saving & Loading the Model
-
-### Save model weights:
-```bash
+- Save model weights:
+```python
 transformer.save_weights("transformer_weights.h5")
 ```
-### Load model weights:
-```bash
+- Load Model weights:
+```python
 transformer.load_weights("transformer_weights.h5")
 ```
-### Once loaded, you can directly generate summaries:
-```bash
-summarize(transformer, input_text)
-```
---------------------------------------------------------------------------
+# 🧩 Educational Notes
 
-## 📌 Notes
+## Why RAG?
+- Helps the model answer questions using large knowledge sources without storing all facts in parameters.
 
-- The model does NOT need retraining if weights are saved and reloaded
-- Inference runs with training=False
-- Designed for clarity and educational purposes
+## Why chunking?
+- Enables retrieval of context that fits into model input limits.
+
+## TF-IDF vs embeddings
+- TF-IDF provides a lightweight, interpretable retrieval mechanism before experimenting with dense embeddings.
+
+## Hands-on insight
+- Combines classical IR with modern sequence generation — ideal for educational exploration.
+
+# 📌 Credits
+
+- Paper: "Attention is All You Need", Vaswani et al., 2017
+- Guidance & assistance from ChatGPT
+- C4 dataset used for RAG retrieval experiments
+
+# 🚀 Conclusion
+
+- This repository is designed for learners to:
+ 1. Understand Transformer mechanics step by step
+ 2. Learn retrieval-based question answering (RAG)
+ 3. Experiment with chunked corpora and TF-IDF
+ 4. Observe context-conditioned text generation in action
+

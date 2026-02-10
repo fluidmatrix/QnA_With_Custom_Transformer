@@ -2,7 +2,8 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 import re
-
+import string
+import transformer_utils
 
 
 def get_train_test_data(data_dir):
@@ -194,5 +195,214 @@ def next_word(model, encoder_input, output):
     
     return predicted_id
 
+def get_sentinels(tokenizer, display=False):
+    sentinels = {}
+    vocab_size = tokenizer.vocab_size(name=None)
+    for i, char in enumerate(reversed(string.ascii_letters), 1):
+        decoded_text = tokenizer.detokenize([vocab_size - i]).numpy().decode("utf-8")
+        
+        # Sentinels, ex: <Z> - <a>
+        sentinels[decoded_text] = f'<{char}>'    
+    
+        if display:
+            print(f'The sentinel is <{char}> and the decoded token is:', decoded_text)
+
+    return sentinels
+
+def pretty_decode(encoded_str_list, sentinels, tokenizer):
+    # If already a string, just do the replacements.
+    if tf.is_tensor(encoded_str_list) and encoded_str_list.dtype == tf.string:
+        for token, char in sentinels.items():
+            encoded_str_list = tf.strings.regex_replace(encoded_str_list, token, char)
+        return encoded_str_list
+  
+    # We need to decode and then prettyfy it.
+    return pretty_decode(tokenizer.detokenize(encoded_str_list), sentinels, tokenizer)
+
+
+def tokenize_and_mask(text, 
+                      noise=0.15, 
+                      randomizer=np.random.uniform, 
+                      tokenizer=None):
+    """Tokenizes and masks a given input.
+
+    Args:
+        text (str or bytes): Text input.
+        noise (float, optional): Probability of masking a token. Defaults to 0.15.
+        randomizer (function, optional): Function that generates random values. Defaults to np.random.uniform.
+        tokenizer (function, optional): Tokenizer function. Defaults to tokenize.
+
+    Returns:
+        inps, targs: Lists of integers associated to inputs and targets.
+    """
+    
+    # Current sentinel number (starts at 0)
+    cur_sentinel_num = 0
+    
+    # Inputs and targets
+    inps, targs = [], []
+
+    # Vocab_size
+    vocab_size = int(tokenizer.vocab_size())
+    
+    # EOS token id 
+    # Must be at the end of each target!
+    eos = tokenizer.string_to_id("</s>").numpy()
+    
+    ### START CODE HERE ###
+    
+    # prev_no_mask is True if the previous token was NOT masked, False otherwise
+    # set prev_no_mask to True
+    prev_no_mask = True
+    
+    # Loop over the tokenized text
+    for token in tokenizer.tokenize(text).numpy():
+        
+        # Generate a random value between 0 and 1
+        rnd_val = randomizer() 
+        
+        # Check if the noise is greater than a random value (weighted coin flip)
+        if noise > rnd_val:
+            
+            # Check if previous token was NOT masked
+            if prev_no_mask:
+                
+                # Current sentinel increases by 1
+                cur_sentinel_num += 1
+                
+                # Compute end_id by subtracting current sentinel value out of the total vocabulary size
+                end_id = vocab_size - cur_sentinel_num
+                
+                # Append end_id at the end of the targets
+                targs.append(end_id)
+                
+                # Append end_id at the end of the inputs
+                inps.append(end_id)
+                
+            # Append token at the end of the targets
+            targs.append(token)
+            
+            # set prev_no_mask accordingly
+            prev_no_mask = False
+
+        else:
+            
+            # Append token at the end of the inputs
+            inps.append(token)
+            
+            # Set prev_no_mask accordingly
+            prev_no_mask = True
+    
+    
+    # Add EOS token to the end of the targets
+    targs.append(eos)
+    
+    ### END CODE HERE ###
+    
+    return inps, targs
+
+
+def parse_squad(dataset):
+    """Extract all the answers/questions pairs from the SQuAD dataset
+
+    Args:
+        dataset (dict): The imported JSON dataset
+
+    Returns:
+        inputs, targets: Two lists containing the inputs and the targets for the QA model
+    """
+
+    inputs, targets = [], []
+
+    ### START CODE HERE ###
+    
+    # Loop over all the articles
+    for article in dataset:
+        
+        # Loop over each paragraph of each article
+        for paragraph in article['paragraphs']:
+            
+            # Extract context from the paragraph
+            context = paragraph['context']
+            
+            #Loop over each question of the given paragraph
+            for qa in paragraph['qas']:
+                
+                # If this question is not impossible and there is at least one answer
+                if len(qa['answers']) > 0 and not(qa['is_impossible']):
+                    
+                    # Create the question/context sequence
+                    question_context = 'question: ' + qa['question'] + ' context: ' + context
+                    
+                    # Create the answer sequence. Use the text field of the first answer
+                    answer = 'answer: ' + qa['answers'][0]['text']
+                    
+                    # Add the question_context to the inputs list
+                    inputs.append(question_context)
+                    
+                    # Add the answer to the targets list
+                    targets.append(answer)
+    
+    ### END CODE HERE ###
+    
+    return inputs, targets
+
+
+def answer_question(question, model, tokenizer, encoder_maxlen=150, decoder_maxlen=50):
+    """
+    A function for question answering using the transformer model
+    Arguments:
+        question (tf.Tensor): Input data with question and context
+        model (tf.keras.model): The transformer model
+        tokenizer (function): The SentencePiece tokenizer
+        encoder_maxlen (number): Max length of the encoded sequence
+        decoder_maxlen (number): Max length of the decoded sequence
+    Returns:
+        _ (str): The answer to the question
+    """
+    
+    ### START CODE HERE ###
+    
+    # QUESTION SETUP
+    
+    # Tokenize the question
+    tokenized_question = tokenizer.tokenize(question)
+    
+    # Add an extra dimension to the tensor
+    tokenized_question = tf.expand_dims(tokenized_question, 0) 
+    
+    # Pad the question tensor
+    padded_question = tf.keras.preprocessing.sequence.pad_sequences(tokenized_question,
+                                                                    maxlen=encoder_maxlen,
+                                                                    padding='post', 
+                                                                    truncating='post') 
+    # ANSWER SETUP
+    
+    # Tokenize the answer
+    # Hint: All answers begin with the string "answer: "
+    tokenized_answer = tokenizer.tokenize("answer: ")
+    
+    # Add an extra dimension to the tensor
+    tokenized_answer = tf.expand_dims(tokenized_answer, 0)
+    
+    # Get the id of the EOS token
+    eos = tokenizer.string_to_id("</s>") 
+    
+    # Loop for decoder_maxlen iterations
+    for i in range(decoder_maxlen):
+        
+        # Predict the next word using the model, the input document and the current state of output
+        next_word = transformer_utils.next_word(padded_question, tokenized_answer, model)
+        
+        # Concat the predicted next word to the output 
+        tokenized_answer = tf.concat([tokenized_answer,next_word], axis=1)
+        
+        # The text generation stops if the model predicts the EOS token
+        if next_word == eos:
+            break
+    
+    ### END CODE HERE ###
+
+    return tokenized_answer 
 
 
