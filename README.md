@@ -69,28 +69,6 @@ transformer_model/
 - Feed-forward layers
 - Output softmax over the vocabulary
 
-# ⚙ Training Configuration (Hands-On Learning)
-
-- **Encoder max length**: 150 tokens  
-- **Decoder max length**: 50 tokens  
-- **Embedding dimension**: 128  
-- **Number of layers**: 2  
-- **Attention heads**: 2  
-- **Batch size**: 64  
-- **Epochs**: 20  
-- **Optimizer**: Adam with warmup schedule  
-- **Loss function**: Masked Sparse Categorical Crossentropy  
-
-This configuration demonstrates practical Transformer tuning for educational purposes.
-
-# 💾 Saving & Loading Models
-
-- Save weights:
-  ```python
-  transformer.save_weights("transformer_weights.h5")
-  ```
-**Transformer Decoding**: The model generates answers conditioned on both the question and retrieved context.
-
 # 🏗 Model Architecture
 
 ## Encoder
