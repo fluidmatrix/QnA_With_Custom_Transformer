@@ -55,20 +55,6 @@ transformer_model/
    - Step-by-step token prediction until `<EOS>` token
    - Teacher forcing is used during training to improve learning
 
-# 🏗 Transformer Architecture (Educational Focus)
-
-## Encoder
-- Token embedding + positional encoding
-- Multi-head self-attention
-- Feed-forward layers
-- Stacked encoder blocks
-
-## Decoder
-- Masked self-attention for autoregressive prediction
-- Encoder-decoder attention to integrate context
-- Feed-forward layers
-- Output softmax over the vocabulary
-
 # 🏗 Model Architecture
 
 ## Encoder
