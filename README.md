@@ -1,3 +1,7 @@
+![Vibecoded](https://img.shields.io/badge/vibecoded-yes-brightgreen)
+
+### Shoutout
+🚀 This project was vibecoded to life!
 # 🧠 Transformer-Based Question Answering with RAG (C4)
 
 This repository demonstrates a **Transformer-based question answering system** enhanced with **Retrieval-Augmented Generation (RAG)** using chunked C4 data. 
